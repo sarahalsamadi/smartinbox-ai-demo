@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query
 
 from .services.classifier import classify_email
 from .services.summarizer import generate_summary
@@ -71,13 +71,24 @@ def health() -> dict[str, str]:
 
 
 @app.get("/emails")
-def list_emails() -> list[dict[str, object]]:
-    return [enrich_email(email) for email in load_emails()]
+def list_emails(
+    category: str | None = None,
+    search: str | None = None,
+    limit: int = Query(default=100, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> dict[str, object]:
+    emails = filter_emails(get_enriched_emails(), category=category, search=search)
+    return {
+        "total": len(emails),
+        "limit": limit,
+        "offset": offset,
+        "items": emails[offset : offset + limit],
+    }
 
 
 @app.get("/stats")
-def stats() -> dict[str, int]:
-    emails = list_emails()
+def stats(search: str | None = None) -> dict[str, int]:
+    emails = filter_emails(get_enriched_emails(), search=search)
     return {
         "total": len(emails),
         "important": count_category(emails, "Important"),
@@ -98,6 +109,10 @@ def load_emails() -> list[dict[str, object]]:
     return MOCK_EMAILS
 
 
+def get_enriched_emails() -> list[dict[str, object]]:
+    return [enrich_email(email) for email in load_emails()]
+
+
 def enrich_email(email: dict[str, object]) -> dict[str, object]:
     subject = str(email.get("subject") or "")
     body = str(email.get("body") or "")
@@ -109,6 +124,38 @@ def enrich_email(email: dict[str, object]) -> dict[str, object]:
         "confidence": classification["confidence"],
         "summary": generate_summary(subject, body),
     }
+
+
+def filter_emails(
+    emails: list[dict[str, object]],
+    category: str | None = None,
+    search: str | None = None,
+) -> list[dict[str, object]]:
+    if category is not None and category not in CATEGORIES:
+        allowed_values = ", ".join(CATEGORIES)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid category. Allowed values: {allowed_values}",
+        )
+
+    filtered = emails
+    if category:
+        filtered = [email for email in filtered if email.get("category") == category]
+
+    search_text = normalize_search(search)
+    if search_text:
+        filtered = [email for email in filtered if matches_search(email, search_text)]
+
+    return filtered
+
+
+def matches_search(email: dict[str, object], search_text: str) -> bool:
+    searchable_fields = ("sender", "subject", "body", "summary")
+    return any(search_text in str(email.get(field) or "").lower() for field in searchable_fields)
+
+
+def normalize_search(search: str | None) -> str:
+    return (search or "").strip().lower()
 
 
 def count_category(emails: list[dict[str, object]], category: str) -> int:
