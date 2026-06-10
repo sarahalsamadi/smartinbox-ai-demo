@@ -16,6 +16,11 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(BACKEND_ROOT))
+
+from app.services.classifier import classify_email  # noqa: E402
+from app.services.summarizer import generate_summary  # noqa: E402
+
 SOURCE_CSV = PROJECT_ROOT / "datasets" / "emails.csv"
 OUTPUT_JSON = BACKEND_ROOT / "data" / "enron_sample.json"
 ROW_LIMIT = 100
@@ -28,41 +33,11 @@ while True:
     except OverflowError:
         MAX_FIELD_SIZE //= 10
 
-IMPORTANT_KEYWORDS = {
-    "urgent",
-    "asap",
-    "immediately",
-    "important",
-    "deadline",
-    "action required",
-    "security",
-    "password",
-    "legal",
-    "board",
-    "meeting",
-    "approval",
-    "contract",
-}
-
-IGNORED_KEYWORDS = {
-    "newsletter",
-    "unsubscribe",
-    "promotion",
-    "promo",
-    "offer",
-    "discount",
-    "marketing",
-    "advertisement",
-    "click here",
-    "subscription",
-}
-
 HEADER_LINE_RE = re.compile(
     r"^(from|to|cc|bcc|subject|date|sent|received|message-id|mime-version|"
     r"content-type|content-transfer-encoding|x-[\w-]+):",
     re.IGNORECASE,
 )
-SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")
 TAG_RE = re.compile(r"<[^>]+>")
 WHITESPACE_RE = re.compile(r"\s+")
 
@@ -124,34 +99,6 @@ def clean_text(text: str) -> str:
     return WHITESPACE_RE.sub(" ", text or "").strip()
 
 
-def classify_email(subject: str, body: str) -> tuple[str, float]:
-    text = f"{subject} {body}".lower()
-    important_hits = sum(1 for keyword in IMPORTANT_KEYWORDS if keyword in text)
-    ignored_hits = sum(1 for keyword in IGNORED_KEYWORDS if keyword in text)
-
-    if important_hits > ignored_hits and important_hits > 0:
-        return "Important", min(0.98, 0.78 + important_hits * 0.04)
-    if ignored_hits > 0:
-        return "Ignored", min(0.95, 0.74 + ignored_hits * 0.05)
-    return "Normal", 0.66
-
-
-def summarize(body: str) -> str:
-    sentences = SENTENCE_RE.split(body)
-    for sentence in sentences:
-        sentence = clean_text(sentence)
-        if len(sentence) >= 20:
-            return truncate(sentence)
-    return truncate(body) if body else "No meaningful body text found."
-
-
-def truncate(text: str, max_length: int = 160) -> str:
-    text = clean_text(text)
-    if len(text) <= max_length:
-        return text
-    return text[: max_length - 3].rstrip() + "..."
-
-
 def extract_rows() -> list[dict[str, Any]]:
     if not SOURCE_CSV.exists():
         raise FileNotFoundError(f"Dataset not found: {SOURCE_CSV}")
@@ -162,16 +109,16 @@ def extract_rows() -> list[dict[str, Any]]:
         for index, row in enumerate(islice(reader, ROW_LIMIT), start=1):
             raw_message = row.get("message") or row.get("Message") or ""
             sender, subject, body = parse_message(raw_message, row)
-            category, confidence = classify_email(subject, body)
+            classification = classify_email(subject, body)
             records.append(
                 {
                     "id": index,
                     "sender": sender,
                     "subject": subject,
                     "body": body,
-                    "category": category,
-                    "confidence": round(confidence, 2),
-                    "summary": summarize(body),
+                    "category": classification["category"],
+                    "confidence": classification["confidence"],
+                    "summary": generate_summary(subject, body),
                 }
             )
 

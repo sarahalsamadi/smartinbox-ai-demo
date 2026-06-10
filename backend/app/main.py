@@ -3,6 +3,9 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
+from .services.classifier import classify_email
+from .services.summarizer import generate_summary
+
 app = FastAPI(
     title="SmartInbox AI Demo",
     description="Demo backend for mock email classification and summaries.",
@@ -59,6 +62,7 @@ MOCK_EMAILS = [
 ]
 
 SAMPLE_EMAILS_PATH = Path(__file__).resolve().parents[1] / "data" / "enron_sample.json"
+CATEGORIES = ["Important", "Normal", "Ignored"]
 
 
 @app.get("/health")
@@ -68,7 +72,44 @@ def health() -> dict[str, str]:
 
 @app.get("/emails")
 def list_emails() -> list[dict[str, object]]:
+    return [enrich_email(email) for email in load_emails()]
+
+
+@app.get("/stats")
+def stats() -> dict[str, int]:
+    emails = list_emails()
+    return {
+        "total": len(emails),
+        "important": count_category(emails, "Important"),
+        "normal": count_category(emails, "Normal"),
+        "ignored": count_category(emails, "Ignored"),
+    }
+
+
+@app.get("/categories")
+def categories() -> dict[str, list[str]]:
+    return {"categories": CATEGORIES}
+
+
+def load_emails() -> list[dict[str, object]]:
     if SAMPLE_EMAILS_PATH.exists():
         with SAMPLE_EMAILS_PATH.open("r", encoding="utf-8") as sample_file:
             return json.load(sample_file)
     return MOCK_EMAILS
+
+
+def enrich_email(email: dict[str, object]) -> dict[str, object]:
+    subject = str(email.get("subject") or "")
+    body = str(email.get("body") or "")
+    classification = classify_email(subject, body)
+
+    return {
+        **email,
+        "category": classification["category"],
+        "confidence": classification["confidence"],
+        "summary": generate_summary(subject, body),
+    }
+
+
+def count_category(emails: list[dict[str, object]], category: str) -> int:
+    return sum(1 for email in emails if email.get("category") == category)
