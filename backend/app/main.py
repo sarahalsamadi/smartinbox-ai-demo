@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query
 
 from .services.classifier import classify_email
-from .services.summarizer import generate_summary
+from .services.summarizer import generate_summary, normalize_whitespace
 
 app = FastAPI(
     title="SmartInbox AI Demo",
@@ -63,6 +63,7 @@ MOCK_EMAILS = [
 
 SAMPLE_EMAILS_PATH = Path(__file__).resolve().parents[1] / "data" / "enron_sample.json"
 CATEGORIES = ["Important", "Normal", "Ignored"]
+PREVIEW_MAX_LENGTH = 180
 
 
 @app.get("/health")
@@ -78,12 +79,21 @@ def list_emails(
     offset: int = Query(default=0, ge=0),
 ) -> dict[str, object]:
     emails = filter_emails(get_enriched_emails(), category=category, search=search)
+    page_items = emails[offset : offset + limit]
     return {
         "total": len(emails),
         "limit": limit,
         "offset": offset,
-        "items": emails[offset : offset + limit],
+        "items": [to_email_list_item(email) for email in page_items],
     }
+
+
+@app.get("/emails/{email_id}")
+def get_email(email_id: int) -> dict[str, object]:
+    for email in get_enriched_emails():
+        if email.get("id") == email_id:
+            return to_email_detail(email)
+    raise HTTPException(status_code=404, detail="Email not found")
 
 
 @app.get("/stats")
@@ -124,6 +134,37 @@ def enrich_email(email: dict[str, object]) -> dict[str, object]:
         "confidence": classification["confidence"],
         "summary": generate_summary(subject, body),
     }
+
+
+def to_email_list_item(email: dict[str, object]) -> dict[str, object]:
+    return {
+        "id": email.get("id"),
+        "sender": email.get("sender"),
+        "subject": email.get("subject"),
+        "category": email.get("category"),
+        "confidence": email.get("confidence"),
+        "summary": email.get("summary"),
+        "preview": generate_preview(str(email.get("body") or "")),
+    }
+
+
+def to_email_detail(email: dict[str, object]) -> dict[str, object]:
+    return {
+        "id": email.get("id"),
+        "sender": email.get("sender"),
+        "subject": email.get("subject"),
+        "body": email.get("body"),
+        "category": email.get("category"),
+        "confidence": email.get("confidence"),
+        "summary": email.get("summary"),
+    }
+
+
+def generate_preview(body: str) -> str:
+    preview = normalize_whitespace(body)
+    if len(preview) <= PREVIEW_MAX_LENGTH:
+        return preview
+    return preview[: PREVIEW_MAX_LENGTH - 3].rstrip() + "..."
 
 
 def filter_emails(
