@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from fastapi import FastAPI
 
 app = FastAPI(
@@ -55,6 +58,8 @@ MOCK_EMAILS = [
     },
 ]
 
+SAMPLE_EMAILS_PATH = Path(__file__).resolve().parents[1] / "data" / "enron_sample.json"
+
 
 @app.get("/health")
 def health() -> dict[str, str]:
@@ -63,4 +68,7 @@ def health() -> dict[str, str]:
 
 @app.get("/emails")
 def list_emails() -> list[dict[str, object]]:
+    if SAMPLE_EMAILS_PATH.exists():
+        with SAMPLE_EMAILS_PATH.open("r", encoding="utf-8") as sample_file:
+            return json.load(sample_file)
     return MOCK_EMAILS
