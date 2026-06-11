@@ -5,6 +5,10 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime
+import subprocess
+import sys
+from .services.feedback_store import init_db, add_feedback as db_add_feedback, list_feedback as db_list_feedback, delete_feedback as db_delete_feedback
+from fastapi import BackgroundTasks
 
 from .services.classifier import classify_email
 from .services.ml_classifier import (
@@ -81,8 +85,10 @@ SAMPLE_EMAILS_PATH = Path(__file__).resolve().parents[1] / "data" / "enron_sampl
 CATEGORIES = ["Important", "Normal", "Ignored"]
 PREVIEW_MAX_LENGTH = 180
 
-# In-memory feedback store for Phase 7 user corrections
-FEEDBACK_STORE: list[dict[str, object]] = []
+
+@app.on_event("startup")
+def _startup_initialize_db() -> None:
+    init_db()
 
 
 class FeedbackPayload(BaseModel):
@@ -146,19 +152,36 @@ def post_email_feedback(email_id: int, payload: FeedbackPayload) -> dict[str, ob
     if predicted is None:
         raise HTTPException(status_code=404, detail="Email not found")
 
-    entry = {
-        "email_id": email_id,
-        "predicted_category": predicted,
-        "corrected_category": corrected,
-        "corrected_at": datetime.utcnow().isoformat() + "Z",
-    }
-    FEEDBACK_STORE.append(entry)
-    return entry
+    corrected_at = datetime.utcnow().isoformat() + "Z"
+    record = db_add_feedback(email_id, predicted, corrected, corrected_at)
+    return record
 
 
 @app.get("/feedback")
 def list_feedback() -> dict[str, object]:
-    return {"total": len(FEEDBACK_STORE), "items": FEEDBACK_STORE}
+    items = db_list_feedback()
+    return {"total": len(items), "items": items}
+
+
+@app.delete("/feedback/{record_id}")
+def delete_feedback(record_id: int) -> dict[str, object]:
+    deleted = db_delete_feedback(record_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Feedback record not found")
+    return {"deleted": True}
+
+
+@app.post("/retrain", status_code=202)
+def retrain_model(background_tasks: BackgroundTasks) -> dict[str, object]:
+    """Trigger a background retraining job that uses saved feedback to retrain the ML model."""
+    # Spawn a separate process to avoid blocking the server
+    script_path = Path(__file__).resolve().parents[1] / "ml" / "retrain_with_feedback.py"
+    try:
+        # Use sys.executable to ensure the same Python interpreter
+        subprocess.Popen([sys.executable, str(script_path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start retrain job: {e}")
+    return {"status": "started"}
 
 
 @app.get("/stats")

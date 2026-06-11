@@ -203,13 +203,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              ElevatedButton.icon(
-                                onPressed: _loadDebugInfo,
-                                icon: const Icon(Icons.refresh, size: 16),
-                                label: const Text('Refresh Diagnostics'),
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                ),
+                              Row(
+                                children: [
+                                  ElevatedButton.icon(
+                                    onPressed: _loadDebugInfo,
+                                    icon: const Icon(Icons.refresh, size: 16),
+                                    label: const Text('Refresh Diagnostics'),
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  ElevatedButton.icon(
+                                    onPressed: () async {
+                                      // Call retrain endpoint
+                                      final messenger = ScaffoldMessenger.of(context);
+                                      setState(() {
+                                        _isLoadingDebug = true;
+                                      });
+                                      int statusCode = -1;
+                                      String? error;
+                                      try {
+                                        final response = await http.post(Uri.parse('$backendBaseUrl/retrain'));
+                                        statusCode = response.statusCode;
+                                      } catch (e) {
+                                        error = e.toString();
+                                      }
+                                      if (!mounted) return;
+                                      if (error != null) {
+                                        messenger.showSnackBar(SnackBar(content: Text('Retrain error: $error')));
+                                      } else if (statusCode == 202) {
+                                        messenger.showSnackBar(const SnackBar(content: Text('Retrain job started')));
+                                      } else {
+                                        messenger.showSnackBar(SnackBar(content: Text('Retrain failed: $statusCode')));
+                                      }
+                                      setState(() {
+                                        _isLoadingDebug = false;
+                                      });
+                                    },
+                                    icon: const Icon(Icons.refresh, size: 16),
+                                    label: const Text('Retrain Model'),
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
