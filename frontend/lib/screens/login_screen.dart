@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_state.dart';
+import '../core/app_theme.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -7,7 +8,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
@@ -18,14 +19,14 @@ class LoginScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade100.withOpacity(0.4),
+                    color: AppTheme.primary.withOpacity(0.12),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.amber.shade300, width: 2),
+                    border: Border.all(color: AppTheme.primary.withOpacity(0.24), width: 2),
                   ),
                   child: Icon(
                     Icons.mail_lock,
                     size: 80,
-                    color: Colors.amber.shade800,
+                    color: AppTheme.primary,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -66,7 +67,7 @@ class LoginScreen extends StatelessWidget {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.login, color: Colors.blue),
+                      Icon(Icons.login, color: AppTheme.secondary),
                       // Mocking a Google icon with standard sign in text
                       SizedBox(width: 12),
                       Text(

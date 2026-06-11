@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/email.dart';
+import '../core/app_theme.dart';
 
 class EmailCard extends StatelessWidget {
   final Email email;
@@ -14,26 +15,26 @@ class EmailCard extends StatelessWidget {
   Color _getCategoryColor(String category) {
     switch (category.toLowerCase()) {
       case 'important':
-        return Colors.red.shade700;
+        return AppTheme.important;
       case 'normal':
-        return Colors.blue.shade700;
+        return AppTheme.normal;
       case 'ignored':
-        return Colors.grey.shade600;
+        return AppTheme.ignored;
       default:
-        return Colors.teal.shade700;
+        return AppTheme.normal;
     }
   }
 
   Color _getCategoryBgColor(String category) {
     switch (category.toLowerCase()) {
       case 'important':
-        return Colors.red.shade50;
+        return AppTheme.important.withOpacity(0.06);
       case 'normal':
-        return Colors.blue.shade50;
+        return AppTheme.normal.withOpacity(0.06);
       case 'ignored':
-        return Colors.grey.shade100;
+        return AppTheme.ignored.withOpacity(0.12);
       default:
-        return Colors.teal.shade50;
+        return AppTheme.normal.withOpacity(0.06);
     }
   }
 
@@ -117,14 +118,14 @@ class EmailCard extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade50.withOpacity(0.5),
+                    color: AppTheme.secondary.withOpacity(0.06),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.amber.shade200.withOpacity(0.5)),
+                    border: Border.all(color: AppTheme.secondary.withOpacity(0.18)),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.summarize, size: 16, color: Colors.amber.shade800),
+                      Icon(Icons.summarize, size: 16, color: AppTheme.secondary),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -132,7 +133,7 @@ class EmailCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             fontStyle: FontStyle.italic,
-                            color: Colors.amber.shade900,
+                            color: AppTheme.secondary,
                           ),
                         ),
                       ),

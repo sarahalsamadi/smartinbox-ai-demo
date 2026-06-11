@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/api_client.dart';
+import '../core/app_theme.dart';
 import '../models/email.dart';
 
 class EmailDetailScreen extends StatefulWidget {
@@ -82,26 +83,26 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
   Color _getCategoryColor(String category) {
     switch (category.toLowerCase()) {
       case 'important':
-        return Colors.red.shade700;
+        return AppTheme.important;
       case 'normal':
-        return Colors.blue.shade700;
+        return AppTheme.normal;
       case 'ignored':
-        return Colors.grey.shade600;
+        return AppTheme.ignored;
       default:
-        return Colors.teal.shade700;
+        return AppTheme.secondary;
     }
   }
 
   Color _getCategoryBgColor(String category) {
     switch (category.toLowerCase()) {
       case 'important':
-        return Colors.red.shade50;
+        return AppTheme.important.withOpacity(0.06);
       case 'normal':
-        return Colors.blue.shade50;
+        return AppTheme.normal.withOpacity(0.06);
       case 'ignored':
-        return Colors.grey.shade100;
+        return AppTheme.ignored.withOpacity(0.12);
       default:
-        return Colors.teal.shade50;
+        return AppTheme.secondary.withOpacity(0.06);
     }
   }
 
@@ -147,8 +148,8 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
                           Row(
                             children: [
                               CircleAvatar(
-                                backgroundColor: Colors.amber.shade100,
-                                foregroundColor: Colors.amber.shade800,
+                                backgroundColor: AppTheme.primary.withOpacity(0.12),
+                                foregroundColor: AppTheme.primary,
                                 child: const Icon(Icons.person),
                               ),
                               const SizedBox(width: 12),
@@ -232,23 +233,23 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.amber.shade50.withOpacity(0.8),
+                                color: AppTheme.secondary.withOpacity(0.06),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.amber.shade200),
+                                border: Border.all(color: AppTheme.secondary.withOpacity(0.18)),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(Icons.auto_awesome, size: 20, color: Colors.amber.shade800),
+                                      Icon(Icons.auto_awesome, size: 20, color: AppTheme.secondary),
                                       const SizedBox(width: 8),
                                       Text(
                                         'AI Summary',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,
-                                          color: Colors.amber.shade900,
+                                          color: AppTheme.secondary,
                                         ),
                                       ),
                                     ],
@@ -258,7 +259,7 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
                                     _email!.summary,
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.amber.shade900,
+                                      color: AppTheme.secondary,
                                       height: 1.4,
                                     ),
                                   ),
@@ -305,7 +306,7 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
                                   onPressed: _isSendingFeedback ? null : () => _sendFeedback('Important'),
                                   icon: const Icon(Icons.star),
                                   label: const Text('Mark Important'),
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.important),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -314,6 +315,7 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
                                   onPressed: _isSendingFeedback ? null : () => _sendFeedback('Normal'),
                                   icon: const Icon(Icons.check_circle_outline),
                                   label: const Text('Mark Normal'),
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.normal),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -322,7 +324,7 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
                                   onPressed: _isSendingFeedback ? null : () => _sendFeedback('Ignored'),
                                   icon: const Icon(Icons.remove_circle_outline),
                                   label: const Text('Mark Ignored'),
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade300, foregroundColor: Colors.black87),
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.ignored.withOpacity(0.12), foregroundColor: AppTheme.text),
                                 ),
                               ),
                             ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import '../models/stats.dart';
+import '../core/app_theme.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
@@ -152,32 +153,32 @@ class _StatsScreenState extends State<StatsScreen> {
                             title: 'TOTAL EMAILS',
                             count: _stats!.total,
                             icon: Icons.email,
-                            color: Colors.amber.shade900,
-                            bgColor: Colors.amber.shade50.withOpacity(0.3),
+                            color: AppTheme.primary,
+                            bgColor: AppTheme.primary.withOpacity(0.06),
                           ),
                           const SizedBox(height: 16),
                           _buildStatCard(
                             title: 'IMPORTANT EMAILS',
                             count: _stats!.important,
                             icon: Icons.label_important,
-                            color: Colors.red.shade800,
-                            bgColor: Colors.red.shade50.withOpacity(0.3),
+                            color: AppTheme.important,
+                            bgColor: AppTheme.important.withOpacity(0.06),
                           ),
                           const SizedBox(height: 16),
                           _buildStatCard(
                             title: 'NORMAL EMAILS',
                             count: _stats!.normal,
                             icon: Icons.mail_outline,
-                            color: Colors.blue.shade800,
-                            bgColor: Colors.blue.shade50.withOpacity(0.3),
+                            color: AppTheme.normal,
+                            bgColor: AppTheme.normal.withOpacity(0.06),
                           ),
                           const SizedBox(height: 16),
                           _buildStatCard(
                             title: 'IGNORED EMAILS',
                             count: _stats!.ignored,
                             icon: Icons.delete_outline,
-                            color: Colors.grey.shade800,
-                            bgColor: Colors.grey.shade100,
+                            color: AppTheme.ignored,
+                            bgColor: AppTheme.ignored.withOpacity(0.12),
                           ),
                         ],
                       ),

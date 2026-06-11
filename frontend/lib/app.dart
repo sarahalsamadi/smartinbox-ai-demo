@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/app_state.dart';
+import 'core/app_theme.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/stats_screen.dart';
@@ -20,18 +21,7 @@ class SmartInboxApp extends StatelessWidget {
         return MaterialApp(
           title: 'SmartInbox AI',
           debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.amber,
-              primary: Colors.amber.shade700,
-            ),
-            appBarTheme: AppBarTheme(
-              backgroundColor: Colors.amber.shade700,
-              foregroundColor: Colors.white,
-              elevation: 0,
-            ),
-          ),
+          theme: AppTheme.themeData,
           home: state.isLoggedIn ? const DashboardScreen() : const LoginScreen(),
           routes: {
             '/login': (context) => const LoginScreen(),

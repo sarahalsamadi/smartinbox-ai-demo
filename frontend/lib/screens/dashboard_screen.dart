@@ -3,6 +3,7 @@ import '../core/api_client.dart';
 import '../core/app_state.dart';
 import '../models/email.dart';
 import '../widgets/email_card.dart';
+import '../core/app_theme.dart';
 import 'email_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -85,7 +86,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(color: Colors.amber.shade700),
+              decoration: BoxDecoration(color: AppTheme.primary),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -191,7 +192,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Row(
               children: ['All', 'Important', 'Normal', 'Ignored'].map((category) {
                 final isSelected = _selectedCategory == category;
-                return Padding(
+                    return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: FilterChip(
                     label: Text(category),
@@ -204,8 +205,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _loadEmails();
                       }
                     },
-                    selectedColor: Colors.amber.shade200,
-                    checkmarkColor: Colors.amber.shade900,
+                        selectedColor: AppTheme.primary.withOpacity(0.12),
+                        checkmarkColor: AppTheme.primary,
                   ),
                 );
               }).toList(),

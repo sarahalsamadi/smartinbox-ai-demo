@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../core/api_client.dart';
+import '../core/app_theme.dart';
 
 class EvaluationScreen extends StatefulWidget {
   const EvaluationScreen({super.key});
@@ -113,13 +114,13 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       width: 160,
       child: Card(
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppTheme.secondary.withOpacity(0.12))),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              Text(title, style: TextStyle(fontSize: 12, color: AppTheme.text.withOpacity(0.6))),
               const SizedBox(height: 8),
               Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ],
@@ -134,7 +135,13 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     final entries = dist.entries.toList();
     return Wrap(
       spacing: 8,
-      children: entries.map((e) => Chip(label: Text('${e.key}: ${e.value}'))).toList(),
+      children: entries
+          .map((e) => Chip(
+                label: Text('${e.key}: ${e.value}'),
+                backgroundColor: AppTheme.secondary.withOpacity(0.06),
+                labelStyle: TextStyle(color: AppTheme.secondary),
+              ))
+          .toList(),
     );
   }
 
