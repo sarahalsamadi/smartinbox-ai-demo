@@ -7,14 +7,25 @@ from pydantic import BaseModel
 from datetime import datetime
 import subprocess
 import sys
+import importlib.util
 from .services.feedback_store import init_db, add_feedback as db_add_feedback, list_feedback as db_list_feedback, delete_feedback as db_delete_feedback
-from .services.gmail_service import (
-    init_gmail_storage,
-    get_authorize_url,
-    exchange_code,
-    get_status as gmail_get_status,
-    fetch_and_store_messages,
-)
+# Gmail integration is optional — only import if Google libraries are installed
+GMAIL_AVAILABLE = False
+GMAIL_DISABLED_REASON = "Gmail integration is not configured in demo mode"
+if importlib.util.find_spec("google_auth_oauthlib") and importlib.util.find_spec("googleapiclient"):
+    try:
+        from .services.gmail_service import (
+            init_gmail_storage,
+            get_authorize_url,
+            exchange_code,
+            get_status as gmail_get_status,
+            fetch_and_store_messages,
+        )
+        GMAIL_AVAILABLE = True
+    except Exception:
+        GMAIL_AVAILABLE = False
+else:
+    GMAIL_AVAILABLE = False
 from fastapi import BackgroundTasks
 
 from .services.classifier import classify_email
@@ -98,11 +109,12 @@ PREVIEW_MAX_LENGTH = 180
 @app.on_event("startup")
 def _startup_initialize_db() -> None:
     init_db()
-    # initialize gmail storage files
-    try:
-        init_gmail_storage()
-    except Exception:
-        pass
+    # initialize gmail storage files only when Gmail integration is available
+    if GMAIL_AVAILABLE:
+        try:
+            init_gmail_storage()
+        except Exception:
+            pass
 
 
 class FeedbackPayload(BaseModel):
@@ -231,6 +243,8 @@ def debug_model() -> dict[str, object]:
 @app.get("/gmail/authorize")
 def gmail_authorize(backend_base: str | None = None) -> dict[str, object]:
     """Return an authorization URL the user can open to grant access to the demo app."""
+    if not GMAIL_AVAILABLE:
+        return {"enabled": False, "reason": GMAIL_DISABLED_REASON}
     base = backend_base or "http://localhost:8000"
     try:
         url, state = get_authorize_url(base)
@@ -242,6 +256,8 @@ def gmail_authorize(backend_base: str | None = None) -> dict[str, object]:
 @app.post("/gmail/exchange")
 def gmail_exchange(payload: GmailCodePayload) -> dict[str, object]:
     """Exchange an OAuth2 code for tokens and store them server-side."""
+    if not GMAIL_AVAILABLE:
+        return {"enabled": False, "reason": GMAIL_DISABLED_REASON}
     try:
         data = exchange_code(payload.code)
         return {"status": "ok", "data": data}
@@ -253,12 +269,16 @@ def gmail_exchange(payload: GmailCodePayload) -> dict[str, object]:
 
 @app.get("/gmail/status")
 def gmail_status() -> dict[str, object]:
+    if not GMAIL_AVAILABLE:
+        return {"enabled": False, "reason": GMAIL_DISABLED_REASON}
     return gmail_get_status()
 
 
 @app.post("/gmail/sync", status_code=202)
 def gmail_sync(background_tasks: BackgroundTasks, max_results: int = Query(default=50, ge=1, le=500)) -> dict[str, object]:
     """Trigger background sync to fetch recent Gmail messages and store them locally."""
+    if not GMAIL_AVAILABLE:
+        return {"enabled": False, "reason": GMAIL_DISABLED_REASON}
     try:
         background_tasks.add_task(fetch_and_store_messages, max_results)
         return {"status": "started"}
@@ -268,6 +288,8 @@ def gmail_sync(background_tasks: BackgroundTasks, max_results: int = Query(defau
 
 @app.get("/gmail/messages")
 def gmail_messages() -> dict[str, object]:
+    if not GMAIL_AVAILABLE:
+        return {"enabled": False, "reason": GMAIL_DISABLED_REASON}
     dpath = Path(__file__).resolve().parents[1] / "data" / "gmail_messages.json"
     if not dpath.exists():
         return {"total": 0, "items": []}
