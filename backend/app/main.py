@@ -2,13 +2,14 @@ import json
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 from .services.classifier import classify_email
 from .services.ml_classifier import (
     classify_email_ml,
-    is_model_loaded,
-    get_sklearn_version,
     get_model_path,
+    get_sklearn_version,
+    is_model_loaded,
 )
 from .services.summarizer import generate_summary, normalize_whitespace
 
@@ -18,6 +19,13 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"http://localhost:\d+",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 MOCK_EMAILS = [
     {
@@ -85,8 +93,14 @@ def list_emails(
     limit: int = Query(default=100, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> dict[str, object]:
-    emails = filter_emails(get_enriched_emails(classifier=classifier), category=category, search=search)
+    emails = filter_emails(
+        get_enriched_emails(classifier=classifier),
+        category=category,
+        search=search,
+    )
+    emails = sort_emails(emails)
     page_items = emails[offset : offset + limit]
+
     return {
         "total": len(emails),
         "limit": limit,
@@ -143,7 +157,7 @@ def get_enriched_emails(classifier: str = "rules") -> list[dict[str, object]]:
 def enrich_email(email: dict[str, object], classifier: str = "rules") -> dict[str, object]:
     subject = str(email.get("subject") or "")
     body = str(email.get("body") or "")
-    
+
     if classifier == "ml":
         classification = classify_email_ml(subject, body)
     else:
@@ -201,6 +215,7 @@ def filter_emails(
         )
 
     filtered = emails
+
     if category:
         filtered = [email for email in filtered if email.get("category") == category]
 
@@ -209,6 +224,23 @@ def filter_emails(
         filtered = [email for email in filtered if matches_search(email, search_text)]
 
     return filtered
+
+
+def sort_emails(emails: list[dict[str, object]]) -> list[dict[str, object]]:
+    priority_order = {
+        "Important": 0,
+        "Normal": 1,
+        "Ignored": 2,
+    }
+
+    return sorted(
+        emails,
+        key=lambda email: (
+            priority_order.get(str(email.get("category")), 99),
+            -float(email.get("confidence") or 0),
+            int(email.get("id") or 0),
+        ),
+    )
 
 
 def matches_search(email: dict[str, object], search_text: str) -> bool:
