@@ -79,3 +79,16 @@ Returns email records with:
 - `limit`: Maximum number of records to return (default: `100`).
 - `offset`: Number of records to skip (default: `0`).
 
+### `GET /debug/model`
+
+Returns the loading status and metadata of the machine learning classifier model:
+
+```json
+{
+  "model_loaded": true,
+  "classifier": "ml",
+  "sklearn_version": "1.7.1",
+  "model_path": "C:\\Users\\PYTHONIST\\Documents\\My_Github\\smartinbox-ai-demo\\backend\\ml\\models\\email_classifier.joblib"
+}
+```
+

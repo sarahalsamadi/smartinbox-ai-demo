@@ -4,7 +4,12 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query
 
 from .services.classifier import classify_email
-from .services.ml_classifier import classify_email_ml
+from .services.ml_classifier import (
+    classify_email_ml,
+    is_model_loaded,
+    get_sklearn_version,
+    get_model_path,
+)
 from .services.summarizer import generate_summary, normalize_whitespace
 
 app = FastAPI(
@@ -112,6 +117,16 @@ def stats(search: str | None = None) -> dict[str, int]:
 @app.get("/categories")
 def categories() -> dict[str, list[str]]:
     return {"categories": CATEGORIES}
+
+
+@app.get("/debug/model")
+def debug_model() -> dict[str, object]:
+    return {
+        "model_loaded": is_model_loaded(),
+        "classifier": "ml",
+        "sklearn_version": get_sklearn_version(),
+        "model_path": get_model_path(),
+    }
 
 
 def load_emails() -> list[dict[str, object]]:
