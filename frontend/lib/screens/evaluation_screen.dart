@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../core/api_client.dart';
 
 class EvaluationScreen extends StatefulWidget {
@@ -15,6 +16,17 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     final evaluation = await _apiClient.fetchEvaluation();
     final differences = await _apiClient.fetchEvaluationDifferences(limit: 200);
     return {'evaluation': evaluation, 'differences': differences};
+  }
+
+  String formatDateTime(String? value) {
+    if (value == null) return 'Never';
+    try {
+      final dt = DateTime.parse(value).toUtc();
+      final fmt = DateFormat('dd MMM yyyy, HH:mm');
+      return fmt.format(dt);
+    } catch (e) {
+      return 'Never';
+    }
   }
 
   @override
@@ -49,7 +61,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                     _metricCard('Matching', '${eval['matching_predictions'] ?? 0}'),
                     _metricCard('Different', '${eval['different_predictions'] ?? 0}'),
                     _metricCard('Feedback', '${eval['feedback_count'] ?? 0}'),
-                    _metricCard('Last Retrained', '${eval['last_retrained_at'] ?? 'never'}'),
+                    _metricCard('Last Retrained', formatDateTime(eval['last_retrained_at'] as String?)),
                   ],
                 ),
                 const SizedBox(height: 16),
