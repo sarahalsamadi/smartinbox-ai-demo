@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query
 
 from .services.classifier import classify_email
+from .services.ml_classifier import classify_email_ml
 from .services.summarizer import generate_summary, normalize_whitespace
 
 app = FastAPI(
@@ -75,10 +76,11 @@ def health() -> dict[str, str]:
 def list_emails(
     category: str | None = None,
     search: str | None = None,
+    classifier: str = Query(default="rules", pattern="^(rules|ml)$"),
     limit: int = Query(default=100, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> dict[str, object]:
-    emails = filter_emails(get_enriched_emails(), category=category, search=search)
+    emails = filter_emails(get_enriched_emails(classifier=classifier), category=category, search=search)
     page_items = emails[offset : offset + limit]
     return {
         "total": len(emails),
@@ -119,14 +121,18 @@ def load_emails() -> list[dict[str, object]]:
     return MOCK_EMAILS
 
 
-def get_enriched_emails() -> list[dict[str, object]]:
-    return [enrich_email(email) for email in load_emails()]
+def get_enriched_emails(classifier: str = "rules") -> list[dict[str, object]]:
+    return [enrich_email(email, classifier=classifier) for email in load_emails()]
 
 
-def enrich_email(email: dict[str, object]) -> dict[str, object]:
+def enrich_email(email: dict[str, object], classifier: str = "rules") -> dict[str, object]:
     subject = str(email.get("subject") or "")
     body = str(email.get("body") or "")
-    classification = classify_email(subject, body)
+    
+    if classifier == "ml":
+        classification = classify_email_ml(subject, body)
+    else:
+        classification = classify_email(subject, body)
 
     return {
         **email,
