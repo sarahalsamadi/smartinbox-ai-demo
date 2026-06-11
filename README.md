@@ -82,6 +82,32 @@ If you run the frontend on a device not hosted at `localhost`, update the API ba
 - A developer or user can trigger retraining via the Settings screen (sends `POST /retrain`), which spawns a background process that retrains the ML model using saved feedback.
 - Retrain progress is not streamed; status is indicated by `202 Accepted` and the retrain metadata file (`backend/data/retrain_meta.json`) is updated when complete.
 
+## Gmail Integration
+
+Optional: integrate a Gmail inbox for live data.
+
+1. Create OAuth 2.0 Client Credentials in Google Cloud Console (Web application) and add the redirect URI `http://localhost:8000/gmail/exchange`.
+2. Download the JSON client secret and save it as `backend/data/gmail_client_secret.json`.
+3. Start the backend and call the authorize endpoint to get the OAuth URL:
+
+```bash
+curl 'http://localhost:8000/gmail/authorize'
+```
+
+Open the returned URL in a browser, grant access, and paste the authorization code into the exchange endpoint:
+
+```bash
+curl -X POST -H 'Content-Type: application/json' -d '{"code": "<PASTE_CODE_HERE>"}' http://localhost:8000/gmail/exchange
+```
+
+Then sync messages:
+
+```bash
+curl -X POST http://localhost:8000/gmail/sync
+```
+
+Stored Gmail messages are saved to `backend/data/gmail_messages.json` and will appear in the app alongside the demo dataset.
+
 ## Feedback Workflow
 
 - Feedback is sent from the frontend to the backend (`POST /emails/{id}/feedback`).

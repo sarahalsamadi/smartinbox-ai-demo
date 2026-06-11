@@ -108,4 +108,45 @@ class ApiClient {
       throw Exception('Failed to load evaluation differences: ${response.statusCode}');
     }
   }
+
+  // Gmail integration
+  Future<Map<String, dynamic>> getGmailAuthorizeUrl() async {
+    final uri = Uri.parse('$backendBaseUrl/gmail/authorize');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to get Gmail authorize URL: ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> exchangeGmailCode(String code) async {
+    final uri = Uri.parse('$backendBaseUrl/gmail/exchange');
+    final response = await http.post(
+      uri,
+      headers: {HttpHeaders.contentTypeHeader: 'application/json'},
+      body: json.encode({'code': code}),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to exchange Gmail code: ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> getGmailStatus() async {
+    final uri = Uri.parse('$backendBaseUrl/gmail/status');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to get Gmail status: ${response.statusCode}');
+    }
+  }
+
+  Future<int> syncGmail({int maxResults = 50}) async {
+    final uri = Uri.parse('$backendBaseUrl/gmail/sync').replace(queryParameters: {'max_results': maxResults.toString()});
+    final response = await http.post(uri);
+    return response.statusCode;
+  }
 }

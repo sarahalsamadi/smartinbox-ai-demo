@@ -8,6 +8,13 @@ from datetime import datetime
 import subprocess
 import sys
 from .services.feedback_store import init_db, add_feedback as db_add_feedback, list_feedback as db_list_feedback, delete_feedback as db_delete_feedback
+from .services.gmail_service import (
+    init_gmail_storage,
+    get_authorize_url,
+    exchange_code,
+    get_status as gmail_get_status,
+    fetch_and_store_messages,
+)
 from fastapi import BackgroundTasks
 
 from .services.classifier import classify_email
@@ -91,10 +98,19 @@ PREVIEW_MAX_LENGTH = 180
 @app.on_event("startup")
 def _startup_initialize_db() -> None:
     init_db()
+    # initialize gmail storage files
+    try:
+        init_gmail_storage()
+    except Exception:
+        pass
 
 
 class FeedbackPayload(BaseModel):
     corrected_category: str
+
+
+class GmailCodePayload(BaseModel):
+    code: str
 
 
 @app.get("/health")
@@ -210,6 +226,57 @@ def debug_model() -> dict[str, object]:
         "sklearn_version": get_sklearn_version(),
         "model_path": get_model_path(),
     }
+
+
+@app.get("/gmail/authorize")
+def gmail_authorize(backend_base: str | None = None) -> dict[str, object]:
+    """Return an authorization URL the user can open to grant access to the demo app."""
+    base = backend_base or "http://localhost:8000"
+    try:
+        url, state = get_authorize_url(base)
+        return {"url": url, "state": state}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/gmail/exchange")
+def gmail_exchange(payload: GmailCodePayload) -> dict[str, object]:
+    """Exchange an OAuth2 code for tokens and store them server-side."""
+    try:
+        data = exchange_code(payload.code)
+        return {"status": "ok", "data": data}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to exchange code: {e}")
+
+
+@app.get("/gmail/status")
+def gmail_status() -> dict[str, object]:
+    return gmail_get_status()
+
+
+@app.post("/gmail/sync", status_code=202)
+def gmail_sync(background_tasks: BackgroundTasks, max_results: int = Query(default=50, ge=1, le=500)) -> dict[str, object]:
+    """Trigger background sync to fetch recent Gmail messages and store them locally."""
+    try:
+        background_tasks.add_task(fetch_and_store_messages, max_results)
+        return {"status": "started"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/gmail/messages")
+def gmail_messages() -> dict[str, object]:
+    dpath = Path(__file__).resolve().parents[1] / "data" / "gmail_messages.json"
+    if not dpath.exists():
+        return {"total": 0, "items": []}
+    try:
+        with dpath.open("r", encoding="utf-8") as f:
+            items = json.load(f)
+        return {"total": len(items), "items": items}
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to read stored Gmail messages")
 
 
 
@@ -333,10 +400,26 @@ def evaluation_differences(limit: int = 100) -> dict[str, object]:
 
 
 def load_emails() -> list[dict[str, object]]:
+    emails: list[dict[str, object]] = []
+    # load stored Gmail messages first (if any)
+    gmail_path = Path(__file__).resolve().parents[1] / "data" / "gmail_messages.json"
+    if gmail_path.exists():
+        try:
+            with gmail_path.open("r", encoding="utf-8") as gf:
+                gm = json.load(gf)
+                if isinstance(gm, list):
+                    emails.extend(gm)
+        except Exception:
+            pass
+
+    # then load sample dataset or fallback mocks
     if SAMPLE_EMAILS_PATH.exists():
         with SAMPLE_EMAILS_PATH.open("r", encoding="utf-8") as sample_file:
-            return json.load(sample_file)
-    return MOCK_EMAILS
+            emails.extend(json.load(sample_file))
+    else:
+        emails.extend(MOCK_EMAILS)
+
+    return emails
 
 
 def get_enriched_emails(classifier: str = "rules") -> list[dict[str, object]]:

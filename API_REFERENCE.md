@@ -105,6 +105,30 @@ This document describes the HTTP API provided by the backend service (`backend/a
 - Description: Return examples where the rule-based and ML predictions differ.
 - Response: `{ "total": N, "items": [ { id, sender, subject, preview, rule_category, ml_category, ml_confidence } ] }`
 
+## Gmail Integration (optional)
+
+- Method: GET
+- Path: `/gmail/authorize`
+- Description: Returns an OAuth2 authorization URL that a user can open to grant the app access to their Gmail inbox. The server expects a redirect URI of the form `http://localhost:8000/gmail/exchange`.
+- Response: `{ "url": "https://accounts.google.com/..", "state": "..." }`
+
+- Method: POST
+- Path: `/gmail/exchange`
+- Description: Exchange an authorization code for OAuth2 tokens and store them server-side. Request body: `{ "code": "<auth-code>" }`.
+
+- Method: GET
+- Path: `/gmail/status`
+- Description: Returns connection status and account email, e.g. `{ "connected": true, "email": "user@example.com" }`.
+
+- Method: POST
+- Path: `/gmail/sync`
+- Description: Trigger a background sync to fetch recent Gmail messages and save them to `backend/data/gmail_messages.json`. Returns `202 Accepted` with `{ "status": "started" }`.
+
+- Method: GET
+- Path: `/gmail/messages`
+- Description: List stored Gmail messages saved locally. Useful for debugging.
+
+
 ## Notes
 
 - All timestamps are ISO-8601 UTC strings.
