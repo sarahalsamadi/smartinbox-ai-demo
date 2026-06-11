@@ -1,0 +1,5 @@
+package com.smartinboxai.smartinbox_ai
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()
