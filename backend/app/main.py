@@ -19,6 +19,7 @@ from .services.ml_classifier import (
 )
 from .services.summarizer import generate_summary, normalize_whitespace
 from collections import Counter
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 
 app = FastAPI(
     title="SmartInbox AI Demo",
@@ -238,7 +239,9 @@ def evaluation() -> dict[str, object]:
             "last_retrained_at": None,
         }
 
-    matching = 0
+    # Collect true labels and ML predictions
+    y_true = []
+    y_pred = []
     distribution = Counter()
     for item in emails:
         subject = str(item.get("subject") or "")
@@ -246,12 +249,31 @@ def evaluation() -> dict[str, object]:
         weak_label = item.get("category")
         ml_res = classify_email_ml(subject, body)
         ml_cat = ml_res.get("category")
+        y_true.append(weak_label)
+        y_pred.append(ml_cat)
         distribution[ml_cat] += 1
-        if ml_cat == weak_label:
-            matching += 1
 
+    # Basic accuracy vs weak labels
+    matching = sum(1 for t, p in zip(y_true, y_pred) if t == p)
     different = total - matching
     accuracy = round(matching / total, 4) if total > 0 else 0.0
+
+    # Confusion matrix and per-class precision/recall/f1
+    try:
+        labels = CATEGORIES
+        cm = confusion_matrix(y_true, y_pred, labels=labels).tolist()
+        precisions, recalls, f1s, supports = precision_recall_fscore_support(y_true, y_pred, labels=labels, zero_division=0)
+        per_class = {}
+        for i, lbl in enumerate(labels):
+            per_class[lbl] = {
+                "precision": round(float(precisions[i]), 4),
+                "recall": round(float(recalls[i]), 4),
+                "f1": round(float(f1s[i]), 4),
+                "support": int(supports[i]),
+            }
+    except Exception:
+        cm = []
+        per_class = {}
 
     # read retrain metadata if available
     meta_path = Path(__file__).resolve().parents[1] / "data" / "retrain_meta.json"
@@ -272,6 +294,8 @@ def evaluation() -> dict[str, object]:
         "class_distribution": dict(distribution),
         "feedback_count": len(db_list_feedback()),
         "last_retrained_at": last_retrained_at,
+        "confusion_matrix": {"labels": CATEGORIES, "matrix": cm},
+        "per_class": per_class,
     }
 
 
