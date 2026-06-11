@@ -15,6 +15,7 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
   final ApiClient _apiClient = ApiClient();
   Email? _email;
   bool _isLoading = true;
+  bool _isSendingFeedback = false;
   String _error = '';
 
   @override
@@ -31,6 +32,7 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
 
     try {
       final email = await _apiClient.fetchEmailDetails(widget.emailId);
+      if (!mounted) return;
       setState(() {
         _email = email;
         _isLoading = false;
@@ -40,6 +42,40 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _sendFeedback(String correctedCategory) async {
+    if (_email == null) return;
+    setState(() {
+      _isSendingFeedback = true;
+    });
+    try {
+      await _apiClient.postFeedback(_email!.id, correctedCategory);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Saved correction: $correctedCategory')),
+      );
+      setState(() {
+        _email = Email(
+          id: _email!.id,
+          sender: _email!.sender,
+          subject: _email!.subject,
+          category: correctedCategory,
+          confidence: _email!.confidence,
+          summary: _email!.summary,
+          preview: _email!.preview,
+          body: _email!.body,
+        );
+        _isSendingFeedback = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isSendingFeedback = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save feedback: ${e.toString()}')),
+      );
     }
   }
 
@@ -258,6 +294,38 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
                                 height: 1.5,
                               ),
                             ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Feedback buttons
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: _isSendingFeedback ? null : () => _sendFeedback('Important'),
+                                  icon: const Icon(Icons.star),
+                                  label: const Text('Mark Important'),
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: _isSendingFeedback ? null : () => _sendFeedback('Normal'),
+                                  icon: const Icon(Icons.check_circle_outline),
+                                  label: const Text('Mark Normal'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: _isSendingFeedback ? null : () => _sendFeedback('Ignored'),
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                  label: const Text('Mark Ignored'),
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade300, foregroundColor: Colors.black87),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

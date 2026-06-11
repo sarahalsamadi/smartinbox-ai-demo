@@ -3,6 +3,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from datetime import datetime
 
 from .services.classifier import classify_email
 from .services.ml_classifier import (
@@ -79,6 +81,13 @@ SAMPLE_EMAILS_PATH = Path(__file__).resolve().parents[1] / "data" / "enron_sampl
 CATEGORIES = ["Important", "Normal", "Ignored"]
 PREVIEW_MAX_LENGTH = 180
 
+# In-memory feedback store for Phase 7 user corrections
+FEEDBACK_STORE: list[dict[str, object]] = []
+
+
+class FeedbackPayload(BaseModel):
+    corrected_category: str
+
 
 @app.get("/health")
 def health() -> dict[str, str]:
@@ -115,6 +124,41 @@ def get_email(email_id: int) -> dict[str, object]:
         if email.get("id") == email_id:
             return to_email_detail(email)
     raise HTTPException(status_code=404, detail="Email not found")
+
+
+@app.post("/emails/{email_id}/feedback", status_code=201)
+def post_email_feedback(email_id: int, payload: FeedbackPayload) -> dict[str, object]:
+    """Store a user-corrected category for an email (in-memory).
+
+    Request body: { "corrected_category": "Important" | "Normal" | "Ignored" }
+    """
+    corrected = payload.corrected_category
+    if corrected not in CATEGORIES:
+        allowed = ", ".join(CATEGORIES)
+        raise HTTPException(status_code=400, detail=f"Invalid corrected_category. Allowed: {allowed}")
+
+    # Find the email and current predicted category
+    predicted = None
+    for email in get_enriched_emails():
+        if email.get("id") == email_id:
+            predicted = email.get("category")
+            break
+    if predicted is None:
+        raise HTTPException(status_code=404, detail="Email not found")
+
+    entry = {
+        "email_id": email_id,
+        "predicted_category": predicted,
+        "corrected_category": corrected,
+        "corrected_at": datetime.utcnow().isoformat() + "Z",
+    }
+    FEEDBACK_STORE.append(entry)
+    return entry
+
+
+@app.get("/feedback")
+def list_feedback() -> dict[str, object]:
+    return {"total": len(FEEDBACK_STORE), "items": FEEDBACK_STORE}
 
 
 @app.get("/stats")

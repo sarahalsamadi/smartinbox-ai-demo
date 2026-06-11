@@ -4,6 +4,7 @@ import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/feedback_screen.dart';
 
 class SmartInboxApp extends StatelessWidget {
   const SmartInboxApp({super.key});
@@ -35,6 +36,7 @@ class SmartInboxApp extends StatelessWidget {
             '/dashboard': (context) => const DashboardScreen(),
             '/stats': (context) => const StatsScreen(),
             '/settings': (context) => const SettingsScreen(),
+            '/feedback': (context) => const FeedbackScreen(),
           },
         );
       },

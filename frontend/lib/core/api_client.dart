@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'api_config.dart';
 import '../models/email.dart';
 import '../models/stats.dart';
+import 'dart:io';
 
 class ApiClient {
   Future<List<Email>> fetchEmails({
@@ -59,6 +60,32 @@ class ApiClient {
       return EmailStats.fromJson(data);
     } else {
       throw Exception('Failed to load stats: ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> postFeedback(int id, String correctedCategory) async {
+    final uri = Uri.parse('$backendBaseUrl/emails/$id/feedback');
+    final response = await http.post(
+      uri,
+      headers: {HttpHeaders.contentTypeHeader: 'application/json'},
+      body: json.encode({'corrected_category': correctedCategory}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to post feedback: ${response.statusCode}');
+    }
+  }
+
+  Future<List<dynamic>> fetchFeedback() async {
+    final uri = Uri.parse('$backendBaseUrl/feedback');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final List<dynamic> items = data['items'] as List<dynamic>? ?? [];
+      return items;
+    } else {
+      throw Exception('Failed to load feedback: ${response.statusCode}');
     }
   }
 }
