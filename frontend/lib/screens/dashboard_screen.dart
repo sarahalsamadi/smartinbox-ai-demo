@@ -121,6 +121,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.analytics),
+              title: const Text('Evaluation'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/evaluation');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.feedback),
               title: const Text('Feedback'),
               onTap: () {

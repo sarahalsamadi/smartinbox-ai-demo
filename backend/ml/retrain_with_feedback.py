@@ -13,6 +13,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, accuracy_score
+from datetime import datetime
 
 
 ML_DIR = Path(__file__).resolve().parent
@@ -90,6 +91,16 @@ def train():
     print(f"Saving model to {MODEL_PATH}...")
     joblib.dump(pipeline, MODEL_PATH)
     print("Model saved successfully!")
+    # Record retrain timestamp for diagnostics
+    meta_path = BACKEND_ROOT / "data" / "retrain_meta.json"
+    try:
+        meta = {"last_retrained_at": datetime.utcnow().isoformat() + "Z"}
+        meta_path.parent.mkdir(parents=True, exist_ok=True)
+        with meta_path.open("w", encoding="utf-8") as mf:
+            json.dump(meta, mf)
+        print(f"Wrote retrain metadata to {meta_path}")
+    except Exception as e:
+        print(f"Failed to write retrain metadata: {e}")
 
 
 if __name__ == "__main__":

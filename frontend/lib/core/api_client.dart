@@ -88,4 +88,24 @@ class ApiClient {
       throw Exception('Failed to load feedback: ${response.statusCode}');
     }
   }
+
+  Future<Map<String, dynamic>> fetchEvaluation() async {
+    final uri = Uri.parse('$backendBaseUrl/evaluation');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to load evaluation: ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchEvaluationDifferences({int limit = 100}) async {
+    final uri = Uri.parse('$backendBaseUrl/evaluation/differences').replace(queryParameters: {'limit': limit.toString()});
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to load evaluation differences: ${response.statusCode}');
+    }
+  }
 }

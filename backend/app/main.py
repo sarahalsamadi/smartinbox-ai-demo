@@ -18,6 +18,7 @@ from .services.ml_classifier import (
     is_model_loaded,
 )
 from .services.summarizer import generate_summary, normalize_whitespace
+from collections import Counter
 
 app = FastAPI(
     title="SmartInbox AI Demo",
@@ -208,6 +209,103 @@ def debug_model() -> dict[str, object]:
         "sklearn_version": get_sklearn_version(),
         "model_path": get_model_path(),
     }
+
+
+
+@app.get("/evaluation")
+def evaluation() -> dict[str, object]:
+    """Return evaluation metrics comparing ML predictions to the weak labels in the dataset.
+
+    Metrics:
+      - total_samples
+      - accuracy_against_weak_labels
+      - matching_predictions
+      - different_predictions
+      - class_distribution (ML predictions)
+      - feedback_count
+      - last_retrained_at (if available)
+    """
+    emails = load_emails()
+    total = len(emails)
+    if total == 0:
+        return {
+            "total_samples": 0,
+            "accuracy_against_weak_labels": 0.0,
+            "matching_predictions": 0,
+            "different_predictions": 0,
+            "class_distribution": {},
+            "feedback_count": len(db_list_feedback()),
+            "last_retrained_at": None,
+        }
+
+    matching = 0
+    distribution = Counter()
+    for item in emails:
+        subject = str(item.get("subject") or "")
+        body = str(item.get("body") or "")
+        weak_label = item.get("category")
+        ml_res = classify_email_ml(subject, body)
+        ml_cat = ml_res.get("category")
+        distribution[ml_cat] += 1
+        if ml_cat == weak_label:
+            matching += 1
+
+    different = total - matching
+    accuracy = round(matching / total, 4) if total > 0 else 0.0
+
+    # read retrain metadata if available
+    meta_path = Path(__file__).resolve().parents[1] / "data" / "retrain_meta.json"
+    last_retrained_at = None
+    if meta_path.exists():
+        try:
+            with meta_path.open("r", encoding="utf-8") as mf:
+                meta = json.load(mf)
+                last_retrained_at = meta.get("last_retrained_at")
+        except Exception:
+            last_retrained_at = None
+
+    return {
+        "total_samples": total,
+        "accuracy_against_weak_labels": accuracy,
+        "matching_predictions": matching,
+        "different_predictions": different,
+        "class_distribution": dict(distribution),
+        "feedback_count": len(db_list_feedback()),
+        "last_retrained_at": last_retrained_at,
+    }
+
+
+@app.get("/evaluation/differences")
+def evaluation_differences(limit: int = 100) -> dict[str, object]:
+    """Return examples where rule-based and ML predictions differ.
+
+    Query parameter `limit` caps the number of examples returned.
+    """
+    emails = load_emails()
+    diffs = []
+    for item in emails:
+        subject = str(item.get("subject") or "")
+        body = str(item.get("body") or "")
+        rule_res = classify_email(subject, body)
+        ml_res = classify_email_ml(subject, body)
+        rule_cat = rule_res.get("category")
+        ml_cat = ml_res.get("category")
+        if rule_cat != ml_cat:
+            diffs.append(
+                {
+                    "id": item.get("id"),
+                    "sender": item.get("sender"),
+                    "subject": item.get("subject"),
+                    "preview": (str(item.get("body") or "")[:160] + "...") if item.get("body") else "",
+                    "rule_category": rule_cat,
+                    "ml_category": ml_cat,
+                    "ml_confidence": ml_res.get("confidence"),
+                }
+            )
+            if len(diffs) >= limit:
+                break
+
+    return {"total": len(diffs), "items": diffs}
 
 
 def load_emails() -> list[dict[str, object]]:
