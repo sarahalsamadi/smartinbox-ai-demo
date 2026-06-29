@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/api_client.dart';
+import '../widgets/app_navigation.dart';
 
 class GmailSettingsScreen extends StatefulWidget {
   const GmailSettingsScreen({super.key});
@@ -91,7 +92,8 @@ class _GmailSettingsScreenState extends State<GmailSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Gmail Settings')),
+      appBar: const SmartInboxAppBar(title: 'Gmail', isRoot: true),
+      drawer: const SmartInboxDrawer(currentRoute: AppNavigation.gmailSettings),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

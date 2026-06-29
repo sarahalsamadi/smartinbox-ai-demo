@@ -3,6 +3,7 @@ import '../core/api_client.dart';
 import '../core/app_state.dart';
 import '../core/app_theme.dart';
 import '../models/daily_brief.dart';
+import '../widgets/app_navigation.dart';
 import 'email_detail_screen.dart';
 
 class DailyBriefScreen extends StatefulWidget {
@@ -47,7 +48,7 @@ class _DailyBriefScreenState extends State<DailyBriefScreen> {
   }
 
   void _openInbox() {
-    Navigator.pushReplacementNamed(context, '/dashboard');
+    Navigator.pushReplacementNamed(context, AppNavigation.dashboard);
   }
 
   void _openTopPriorityEmail() {
@@ -65,8 +66,9 @@ class _DailyBriefScreenState extends State<DailyBriefScreen> {
   Widget build(BuildContext context) {
     final userName = AppState().userName;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daily Brief'),
+      appBar: SmartInboxAppBar(
+        title: 'Smart Daily Brief',
+        isRoot: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -75,7 +77,7 @@ class _DailyBriefScreenState extends State<DailyBriefScreen> {
           ),
         ],
       ),
-      drawer: _buildDrawer(),
+      drawer: const SmartInboxDrawer(currentRoute: AppNavigation.dailyBrief),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error.isNotEmpty
@@ -377,95 +379,6 @@ class _DailyBriefScreenState extends State<DailyBriefScreen> {
     );
   }
 
-  Widget _buildDrawer() {
-    final state = AppState();
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(color: AppTheme.primary),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                const Text(
-                  'SmartInbox AI',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  state.userEmail.isEmpty
-                      ? 'demo@example.com'
-                      : state.userEmail,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.wb_sunny_outlined),
-            title: const Text('Daily Brief'),
-            selected: true,
-            onTap: () => Navigator.pop(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.inbox),
-            title: const Text('Inbox'),
-            onTap: () {
-              Navigator.pop(context);
-              _openInbox();
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.bar_chart),
-            title: const Text('Statistics'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/stats');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text('Evaluation'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/evaluation');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.feedback),
-            title: const Text('Feedback'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/feedback');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/settings');
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Logout', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pop(context);
-              AppState().logout();
-            },
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _KpiData {

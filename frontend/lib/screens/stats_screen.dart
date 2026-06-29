@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import '../models/stats.dart';
 import '../core/app_theme.dart';
+import '../widgets/app_navigation.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
@@ -97,9 +98,8 @@ class _StatsScreenState extends State<StatsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inbox Statistics'),
-      ),
+      appBar: const SmartInboxAppBar(title: 'Statistics', isRoot: true),
+      drawer: const SmartInboxDrawer(currentRoute: AppNavigation.stats),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error.isNotEmpty

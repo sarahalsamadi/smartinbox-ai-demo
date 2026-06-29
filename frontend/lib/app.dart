@@ -9,6 +9,7 @@ import 'screens/settings_screen.dart';
 import 'screens/feedback_screen.dart';
 import 'screens/evaluation_screen.dart';
 import 'screens/gmail_settings_screen.dart';
+import 'widgets/app_navigation.dart';
 
 class SmartInboxApp extends StatelessWidget {
   const SmartInboxApp({super.key});
@@ -27,14 +28,16 @@ class SmartInboxApp extends StatelessWidget {
               ? const DailyBriefScreen()
               : const LoginScreen(),
           routes: {
-            '/login': (context) => const LoginScreen(),
-            '/daily-brief': (context) => const DailyBriefScreen(),
-            '/dashboard': (context) => const DashboardScreen(),
-            '/stats': (context) => const StatsScreen(),
-            '/settings': (context) => const SettingsScreen(),
-            '/feedback': (context) => const FeedbackScreen(),
-            '/evaluation': (context) => const EvaluationScreen(),
-            '/gmail-settings': (context) => const GmailSettingsScreen(),
+            AppNavigation.login: (context) => const LoginScreen(),
+            AppNavigation.dailyBrief: (context) => const DailyBriefScreen(),
+            AppNavigation.dashboard: (context) => const DashboardScreen(),
+            AppNavigation.inbox: (context) => const DashboardScreen(),
+            AppNavigation.stats: (context) => const StatsScreen(),
+            AppNavigation.settings: (context) => const SettingsScreen(),
+            AppNavigation.feedback: (context) => const FeedbackScreen(),
+            AppNavigation.evaluation: (context) => const EvaluationScreen(),
+            AppNavigation.gmailSettings: (context) =>
+                const GmailSettingsScreen(),
           },
         );
       },

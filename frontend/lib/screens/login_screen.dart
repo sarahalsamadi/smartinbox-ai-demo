@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_state.dart';
 import '../core/app_theme.dart';
+import '../widgets/app_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,12 +23,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _startDemo() {
     AppState().login(name: _nameController.text, email: _emailController.text);
-    Navigator.pushReplacementNamed(context, '/daily-brief');
+    Navigator.pushReplacementNamed(context, AppNavigation.dailyBrief);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: const SmartInboxAppBar(
+        title: 'Demo Login',
+        showBackButton: false,
+      ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: SingleChildScrollView(

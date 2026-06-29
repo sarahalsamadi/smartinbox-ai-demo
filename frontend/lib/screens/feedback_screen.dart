@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/api_client.dart';
+import '../widgets/app_navigation.dart';
 
 class FeedbackScreen extends StatefulWidget {
   const FeedbackScreen({super.key});
@@ -18,7 +19,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Feedback')),
+      appBar: const SmartInboxAppBar(title: 'Feedback'),
       body: FutureBuilder<List<dynamic>>(
         future: _loadFeedback(),
         builder: (context, snapshot) {

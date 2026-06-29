@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import '../core/app_theme.dart';
 import '../models/email.dart';
+import '../widgets/app_navigation.dart';
 
 class EmailDetailScreen extends StatefulWidget {
   final int emailId;
@@ -109,9 +110,7 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Email Details'),
-      ),
+      appBar: const SmartInboxAppBar(title: 'Email Details'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error.isNotEmpty

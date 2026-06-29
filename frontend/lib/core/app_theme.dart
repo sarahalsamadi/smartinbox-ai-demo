@@ -9,6 +9,8 @@ class AppTheme {
   static const Color background = Color(0xFFF8F9FA);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color text = Color(0xFF202124);
+  static const double appBarHeight = 64;
+  static const double cardRadius = 12;
 
   // Category colors
   static const Color important = primary;
@@ -37,6 +39,12 @@ class AppTheme {
       backgroundColor: primary,
       foregroundColor: Colors.white,
       elevation: 0,
+      toolbarHeight: appBarHeight,
+      titleTextStyle: TextStyle(
+        color: Colors.white,
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+      ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -52,7 +60,9 @@ class AppTheme {
     ).apply(bodyColor: text, displayColor: text),
     cardTheme: CardThemeData(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(cardRadius),
+      ),
     ),
   );
 }

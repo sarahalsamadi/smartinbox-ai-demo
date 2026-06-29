@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../core/api_client.dart';
 import '../core/app_theme.dart';
+import '../widgets/app_navigation.dart';
 
 class EvaluationScreen extends StatefulWidget {
   const EvaluationScreen({super.key});
@@ -33,7 +34,8 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Model Evaluation')),
+      appBar: const SmartInboxAppBar(title: 'Evaluation', isRoot: true),
+      drawer: const SmartInboxDrawer(currentRoute: AppNavigation.evaluation),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _loadAll(),
         builder: (context, snapshot) {

@@ -3,6 +3,7 @@ import '../core/app_state.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
+import '../widgets/app_navigation.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -62,9 +63,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final activeClassifier = AppState().classifier;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: const SmartInboxAppBar(title: 'Settings', isRoot: true),
+      drawer: const SmartInboxDrawer(currentRoute: AppNavigation.settings),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
