@@ -3,7 +3,9 @@ import '../core/app_state.dart';
 import '../core/app_theme.dart';
 
 class AppNavigation {
+  static const String splash = '/';
   static const String login = '/login';
+  static const String aiLoading = '/ai-loading';
   static const String dailyBrief = '/daily-brief';
   static const String dashboard = '/dashboard';
   static const String inbox = '/inbox';
@@ -115,89 +117,190 @@ class SmartInboxDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppState();
+    final displayEmail =
+        state.userEmail.isEmpty ? 'demo@example.com' : state.userEmail;
+    final displayName = state.userName;
+    final initials = displayName.isNotEmpty
+        ? displayName.trim()[0].toUpperCase()
+        : 'U';
+
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
+      child: Column(
         children: [
-          DrawerHeader(
-            decoration: const BoxDecoration(color: AppTheme.primary),
+          // Premium header
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppTheme.primary, Color(0xFFD93025)],
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 48, 20, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                const Row(
+                // App branding
+                Row(
                   children: [
-                    Icon(Icons.mark_email_unread, color: Colors.white, size: 28),
-                    SizedBox(width: 10),
-                    Text(
+                    const Icon(
+                      Icons.mark_email_unread,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
                       'SmartInbox AI',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.auto_awesome,
+                            color: Colors.white,
+                            size: 11,
+                          ),
+                          SizedBox(width: 3),
+                          Text(
+                            'AI Demo',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  state.userEmail.isEmpty ? 'demo@example.com' : state.userEmail,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                const SizedBox(height: 16),
+                // User info
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Colors.white.withOpacity(0.25),
+                      child: Text(
+                        initials,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            displayEmail,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.75),
+                              fontSize: 12,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          _DrawerItem(
-            icon: Icons.home_outlined,
-            label: 'Dashboard',
-            routeName: AppNavigation.dashboard,
-            currentRoute: currentRoute,
+          // Navigation items
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: [
+                _DrawerItem(
+                  icon: Icons.wb_sunny_outlined,
+                  label: 'Smart Daily Brief',
+                  routeName: AppNavigation.dailyBrief,
+                  currentRoute: currentRoute,
+                ),
+                _DrawerItem(
+                  icon: Icons.inbox_outlined,
+                  label: 'Inbox',
+                  routeName: AppNavigation.inbox,
+                  currentRoute: currentRoute,
+                ),
+                _DrawerItem(
+                  icon: Icons.bar_chart,
+                  label: 'Statistics',
+                  routeName: AppNavigation.stats,
+                  currentRoute: currentRoute,
+                ),
+                _DrawerItem(
+                  icon: Icons.trending_up,
+                  label: 'Evaluation',
+                  routeName: AppNavigation.evaluation,
+                  currentRoute: currentRoute,
+                ),
+                _DrawerItem(
+                  icon: Icons.settings_outlined,
+                  label: 'Settings',
+                  routeName: AppNavigation.settings,
+                  currentRoute: currentRoute,
+                ),
+                _DrawerItem(
+                  icon: Icons.alternate_email,
+                  label: 'Gmail Settings',
+                  routeName: AppNavigation.gmailSettings,
+                  currentRoute: currentRoute,
+                ),
+                _DrawerItem(
+                  icon: Icons.feedback_outlined,
+                  label: 'Feedback',
+                  routeName: AppNavigation.feedback,
+                  currentRoute: currentRoute,
+                ),
+              ],
+            ),
           ),
-          _DrawerItem(
-            icon: Icons.wb_sunny_outlined,
-            label: 'Smart Daily Brief',
-            routeName: AppNavigation.dailyBrief,
-            currentRoute: currentRoute,
-          ),
-          _DrawerItem(
-            icon: Icons.inbox_outlined,
-            label: 'Inbox',
-            routeName: AppNavigation.inbox,
-            currentRoute: currentRoute,
-          ),
-          _DrawerItem(
-            icon: Icons.bar_chart,
-            label: 'Statistics',
-            routeName: AppNavigation.stats,
-            currentRoute: currentRoute,
-          ),
-          _DrawerItem(
-            icon: Icons.trending_up,
-            label: 'Evaluation',
-            routeName: AppNavigation.evaluation,
-            currentRoute: currentRoute,
-          ),
-          _DrawerItem(
-            icon: Icons.settings_outlined,
-            label: 'Settings',
-            routeName: AppNavigation.settings,
-            currentRoute: currentRoute,
-          ),
-          _DrawerItem(
-            icon: Icons.alternate_email,
-            label: 'Gmail',
-            routeName: AppNavigation.gmailSettings,
-            currentRoute: currentRoute,
-          ),
-          const Divider(),
+          const Divider(height: 1),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red, size: 24),
+            leading: const Icon(Icons.logout, color: Colors.red, size: 22),
             title: const Text(
-              'Logout (Demo)',
-              style: TextStyle(color: Colors.red),
+              'Logout',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+            ),
+            subtitle: const Text(
+              'Demo Mode',
+              style: TextStyle(fontSize: 11, color: Colors.grey),
             ),
             onTap: () => AppNavigation.logout(context),
           ),
+          const SizedBox(height: 8),
         ],
       ),
     );

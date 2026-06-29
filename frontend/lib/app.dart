@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'core/app_state.dart';
 import 'core/app_theme.dart';
+import 'screens/splash_screen.dart';
+import 'screens/ai_loading_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/daily_brief_screen.dart';
 import 'screens/dashboard_screen.dart';
@@ -19,28 +21,55 @@ class SmartInboxApp extends StatelessWidget {
     return ListenableBuilder(
       listenable: AppState(),
       builder: (context, child) {
-        final state = AppState();
         return MaterialApp(
           title: 'SmartInbox AI',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.themeData,
-          home: state.isLoggedIn
-              ? const DailyBriefScreen()
-              : const LoginScreen(),
-          routes: {
-            AppNavigation.login: (context) => const LoginScreen(),
-            AppNavigation.dailyBrief: (context) => const DailyBriefScreen(),
-            AppNavigation.dashboard: (context) => const DashboardScreen(),
-            AppNavigation.inbox: (context) => const DashboardScreen(),
-            AppNavigation.stats: (context) => const StatsScreen(),
-            AppNavigation.settings: (context) => const SettingsScreen(),
-            AppNavigation.feedback: (context) => const FeedbackScreen(),
-            AppNavigation.evaluation: (context) => const EvaluationScreen(),
-            AppNavigation.gmailSettings: (context) =>
-                const GmailSettingsScreen(),
-          },
+          // Always start with the splash screen
+          home: const SplashScreen(),
+          onGenerateRoute: _generateRoute,
         );
       },
+    );
+  }
+
+  Route<dynamic>? _generateRoute(RouteSettings settings) {
+    Widget page;
+    switch (settings.name) {
+      case AppNavigation.splash:
+        page = const SplashScreen();
+      case AppNavigation.login:
+        page = const LoginScreen();
+      case AppNavigation.aiLoading:
+        page = const AiLoadingScreen();
+      case AppNavigation.dailyBrief:
+        page = const DailyBriefScreen();
+      case AppNavigation.dashboard:
+      case AppNavigation.inbox:
+        page = const DashboardScreen();
+      case AppNavigation.stats:
+        page = const StatsScreen();
+      case AppNavigation.settings:
+        page = const SettingsScreen();
+      case AppNavigation.feedback:
+        page = const FeedbackScreen();
+      case AppNavigation.evaluation:
+        page = const EvaluationScreen();
+      case AppNavigation.gmailSettings:
+        page = const GmailSettingsScreen();
+      default:
+        page = const SplashScreen();
+    }
+    return PageRouteBuilder(
+      settings: settings,
+      pageBuilder: (context, a1, a2) => page,
+      transitionsBuilder: (context, animation, a2, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          child: child,
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 280),
     );
   }
 }

@@ -5,6 +5,7 @@ import '../core/app_theme.dart';
 import '../models/email.dart';
 import '../widgets/app_navigation.dart';
 import '../widgets/email_card.dart';
+import '../widgets/ai_widgets.dart';
 import 'email_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -14,7 +15,8 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with SingleTickerProviderStateMixin {
   final ApiClient _apiClient = ApiClient();
   final TextEditingController _searchController = TextEditingController();
 
@@ -23,9 +25,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _error = '';
   String _selectedCategory = 'All';
 
+  late final AnimationController _headerCtrl;
+  late final Animation<double> _headerFade;
+  late final Animation<Offset> _headerSlide;
+
   @override
   void initState() {
     super.initState();
+    _headerCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _headerFade =
+        CurvedAnimation(parent: _headerCtrl, curve: Curves.easeOut);
+    _headerSlide = Tween<Offset>(
+      begin: const Offset(0, -0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _headerCtrl, curve: Curves.easeOut));
+    _headerCtrl.forward();
+
     AppState().addListener(_onAppStateChanged);
     _loadEmails();
   }
@@ -34,13 +52,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void dispose() {
     AppState().removeListener(_onAppStateChanged);
     _searchController.dispose();
+    _headerCtrl.dispose();
     super.dispose();
   }
 
   void _onAppStateChanged() {
-    if (mounted) {
-      _loadEmails();
-    }
+    if (mounted) _loadEmails();
   }
 
   Future<void> _loadEmails() async {
@@ -71,7 +88,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: SmartInboxAppBar(
-        title: 'Dashboard',
+        title: 'Inbox',
         isRoot: true,
         actions: [
           IconButton(
@@ -84,16 +101,77 @@ class _DashboardScreenState extends State<DashboardScreen> {
       drawer: const SmartInboxDrawer(currentRoute: AppNavigation.dashboard),
       body: Column(
         children: [
+          FadeTransition(
+            opacity: _headerFade,
+            child: SlideTransition(
+              position: _headerSlide,
+              child: _buildHeader(),
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppTheme.primary),
+                  )
+                : _error.isNotEmpty
+                ? _buildErrorState()
+                : _emails.isEmpty
+                ? EmptyStateWidget(
+                    message: 'No emails today',
+                    subtitle:
+                        'Your inbox is clear — AI has processed everything.',
+                    icon: Icons.inbox_outlined,
+                    color: AppTheme.secondary,
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadEmails,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      itemCount: _emails.length,
+                      itemBuilder: (context, index) {
+                        final email = _emails[index];
+                        return AnimatedCard(
+                          index: index,
+                          delay: const Duration(milliseconds: 80),
+                          child: EmailCard(
+                            email: email,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      EmailDetailScreen(emailId: email.id),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      color: Colors.white,
+      child: Column(
+        children: [
+          // Search bar
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search sender, subject, body...',
-                prefixIcon: const Icon(Icons.search),
+                hintText: 'Search sender, subject, body…',
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                prefixIcon: const Icon(Icons.search, color: AppTheme.secondary),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.clear, size: 18),
                         onPressed: () {
                           _searchController.clear();
                           _loadEmails();
@@ -101,91 +179,124 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       )
                     : null,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(32),
+                  borderSide: BorderSide.none,
                 ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(32),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(32),
+                  borderSide: const BorderSide(
+                    color: AppTheme.secondary,
+                    width: 1.5,
+                  ),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade50,
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
               onSubmitted: (_) => _loadEmails(),
+              onChanged: (_) => setState(() {}),
             ),
           ),
+          // Category chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
-              children: ['All', 'Important', 'Normal', 'Ignored'].map((
-                category,
-              ) {
-                final isSelected = _selectedCategory == category;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: FilterChip(
-                    label: Text(category),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _selectedCategory = category;
-                        });
-                        _loadEmails();
-                      }
-                    },
-                    selectedColor: AppTheme.primary.withOpacity(0.12),
-                    checkmarkColor: AppTheme.primary,
-                  ),
-                );
-              }).toList(),
+              children: ['All', 'Important', 'Normal', 'Ignored'].map(
+                (category) {
+                  final isSelected = _selectedCategory == category;
+                  Color chipColor;
+                  switch (category) {
+                    case 'Important':
+                      chipColor = AppTheme.important;
+                    case 'Normal':
+                      chipColor = AppTheme.success;
+                    case 'Ignored':
+                      chipColor = AppTheme.ignored;
+                    default:
+                      chipColor = AppTheme.secondary;
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      child: FilterChip(
+                        label: Text(category),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() => _selectedCategory = category);
+                            _loadEmails();
+                          }
+                        },
+                        selectedColor: chipColor.withOpacity(0.12),
+                        checkmarkColor: chipColor,
+                        labelStyle: TextStyle(
+                          color: isSelected ? chipColor : Colors.grey.shade600,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          fontSize: 13,
+                        ),
+                        side: BorderSide(
+                          color: isSelected
+                              ? chipColor.withOpacity(0.4)
+                              : Colors.grey.shade200,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ).toList(),
             ),
           ),
-          const SizedBox(height: 8),
+          // Classifier + AI badge
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
             child: Row(
               children: [
-                Icon(Icons.psychology, size: 16, color: Colors.grey.shade600),
+                Icon(
+                  Icons.psychology,
+                  size: 14,
+                  color: Colors.grey.shade500,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   'Classifier: ${AppState().classifier.toUpperCase()}',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade600,
+                    color: Colors.grey.shade500,
                   ),
                 ),
+                const SizedBox(width: 8),
+                if (!_isLoading)
+                  const AiBadge.analyzed(),
+                const Spacer(),
+                if (!_isLoading)
+                  Text(
+                    '${_emails.length} emails',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade400,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
               ],
             ),
           ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _error.isNotEmpty
-                    ? _buildErrorState()
-                    : _emails.isEmpty
-                        ? const Center(
-                            child: Text('No emails found in this category.'),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _loadEmails,
-                            child: ListView.builder(
-                              itemCount: _emails.length,
-                              itemBuilder: (context, index) {
-                                final email = _emails[index];
-                                return EmailCard(
-                                  email: email,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            EmailDetailScreen(emailId: email.id),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-          ),
+          Divider(height: 1, color: Colors.grey.shade100),
         ],
       ),
     );
@@ -194,21 +305,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildErrorState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              'Failed to load emails.\nEnsure FastAPI backend is running.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                size: 40,
+                color: AppTheme.primary,
+              ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            const Text(
+              'Failed to load emails',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Ensure FastAPI backend is running.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
               onPressed: _loadEmails,
-              child: const Text('Retry'),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
             ),
           ],
         ),
