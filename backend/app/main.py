@@ -230,6 +230,35 @@ def categories() -> dict[str, list[str]]:
     return {"categories": CATEGORIES}
 
 
+@app.get("/daily-brief")
+def daily_brief() -> dict[str, object]:
+    emails = get_enriched_emails()
+    total_emails = len(emails)
+    urgent_emails = count_category(emails, "Important")
+    normal_emails = count_category(emails, "Normal")
+    ignored_emails = count_category(emails, "Ignored")
+    top_priority_email = get_top_priority_email(emails)
+
+    return {
+        "greeting": "Good morning",
+        "user_name": "User",
+        "total_emails": total_emails,
+        "urgent_emails": urgent_emails,
+        "normal_emails": normal_emails,
+        "ignored_emails": ignored_emails,
+        "estimated_time_saved_minutes": ignored_emails * 2 + normal_emails,
+        "top_priority_email": top_priority_email,
+        "suggested_action": (
+            "Review the top priority email first."
+            if top_priority_email is not None
+            else "Your inbox looks stable today."
+        ),
+        "productivity_message": (
+            "SmartInbox AI helped you focus on the most important messages first."
+        ),
+    }
+
+
 @app.get("/debug/model")
 def debug_model() -> dict[str, object]:
     return {
@@ -486,6 +515,27 @@ def to_email_detail(email: dict[str, object]) -> dict[str, object]:
         "category": email.get("category"),
         "confidence": email.get("confidence"),
         "summary": email.get("summary"),
+    }
+
+
+def get_top_priority_email(emails: list[dict[str, object]]) -> dict[str, object] | None:
+    important_emails = [
+        email for email in emails if email.get("category") == "Important"
+    ]
+    if not important_emails:
+        return None
+
+    top_email = max(
+        important_emails,
+        key=lambda email: float(email.get("confidence") or 0),
+    )
+    return {
+        "id": top_email.get("id"),
+        "subject": top_email.get("subject"),
+        "sender": top_email.get("sender"),
+        "category": top_email.get("category"),
+        "confidence": top_email.get("confidence"),
+        "summary": top_email.get("summary"),
     }
 
 

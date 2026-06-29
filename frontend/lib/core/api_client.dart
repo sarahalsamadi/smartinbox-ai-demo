@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
+import '../models/daily_brief.dart';
 import '../models/email.dart';
 import '../models/stats.dart';
 import 'dart:io';
@@ -25,13 +26,18 @@ class ApiClient {
       queryParams['search'] = search;
     }
 
-    final uri = Uri.parse('$backendBaseUrl/emails').replace(queryParameters: queryParams);
-    
+    final uri = Uri.parse(
+      '$backendBaseUrl/emails',
+    ).replace(queryParameters: queryParams);
+
     final response = await http.get(uri);
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final Map<String, dynamic> data =
+          json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
       final List<dynamic> items = data['items'] as List<dynamic>? ?? [];
-      return items.map((item) => Email.fromJson(item as Map<String, dynamic>)).toList();
+      return items
+          .map((item) => Email.fromJson(item as Map<String, dynamic>))
+          .toList();
     } else {
       throw Exception('Failed to load emails: ${response.statusCode}');
     }
@@ -41,7 +47,8 @@ class ApiClient {
     final uri = Uri.parse('$backendBaseUrl/emails/$id');
     final response = await http.get(uri);
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final Map<String, dynamic> data =
+          json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
       return Email.fromJson(data);
     } else {
       throw Exception('Failed to load email details: ${response.statusCode}');
@@ -53,17 +60,35 @@ class ApiClient {
     if (search != null && search.isNotEmpty) {
       queryParams['search'] = search;
     }
-    final uri = Uri.parse('$backendBaseUrl/stats').replace(queryParameters: queryParams);
+    final uri = Uri.parse(
+      '$backendBaseUrl/stats',
+    ).replace(queryParameters: queryParams);
     final response = await http.get(uri);
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final Map<String, dynamic> data =
+          json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
       return EmailStats.fromJson(data);
     } else {
       throw Exception('Failed to load stats: ${response.statusCode}');
     }
   }
 
-  Future<Map<String, dynamic>> postFeedback(int id, String correctedCategory) async {
+  Future<DailyBrief> fetchDailyBrief() async {
+    final uri = Uri.parse('$backendBaseUrl/daily-brief');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data =
+          json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return DailyBrief.fromJson(data);
+    } else {
+      throw Exception('Failed to load daily brief: ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> postFeedback(
+    int id,
+    String correctedCategory,
+  ) async {
     final uri = Uri.parse('$backendBaseUrl/emails/$id/feedback');
     final response = await http.post(
       uri,
@@ -71,7 +96,8 @@ class ApiClient {
       body: json.encode({'corrected_category': correctedCategory}),
     );
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return json.decode(utf8.decode(response.bodyBytes))
+          as Map<String, dynamic>;
     } else {
       throw Exception('Failed to post feedback: ${response.statusCode}');
     }
@@ -81,7 +107,8 @@ class ApiClient {
     final uri = Uri.parse('$backendBaseUrl/feedback');
     final response = await http.get(uri);
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final Map<String, dynamic> data =
+          json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
       final List<dynamic> items = data['items'] as List<dynamic>? ?? [];
       return items;
     } else {
@@ -93,19 +120,27 @@ class ApiClient {
     final uri = Uri.parse('$backendBaseUrl/evaluation');
     final response = await http.get(uri);
     if (response.statusCode == 200) {
-      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return json.decode(utf8.decode(response.bodyBytes))
+          as Map<String, dynamic>;
     } else {
       throw Exception('Failed to load evaluation: ${response.statusCode}');
     }
   }
 
-  Future<Map<String, dynamic>> fetchEvaluationDifferences({int limit = 100}) async {
-    final uri = Uri.parse('$backendBaseUrl/evaluation/differences').replace(queryParameters: {'limit': limit.toString()});
+  Future<Map<String, dynamic>> fetchEvaluationDifferences({
+    int limit = 100,
+  }) async {
+    final uri = Uri.parse(
+      '$backendBaseUrl/evaluation/differences',
+    ).replace(queryParameters: {'limit': limit.toString()});
     final response = await http.get(uri);
     if (response.statusCode == 200) {
-      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return json.decode(utf8.decode(response.bodyBytes))
+          as Map<String, dynamic>;
     } else {
-      throw Exception('Failed to load evaluation differences: ${response.statusCode}');
+      throw Exception(
+        'Failed to load evaluation differences: ${response.statusCode}',
+      );
     }
   }
 
@@ -114,9 +149,12 @@ class ApiClient {
     final uri = Uri.parse('$backendBaseUrl/gmail/authorize');
     final response = await http.get(uri);
     if (response.statusCode == 200) {
-      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return json.decode(utf8.decode(response.bodyBytes))
+          as Map<String, dynamic>;
     } else {
-      throw Exception('Failed to get Gmail authorize URL: ${response.statusCode}');
+      throw Exception(
+        'Failed to get Gmail authorize URL: ${response.statusCode}',
+      );
     }
   }
 
@@ -128,7 +166,8 @@ class ApiClient {
       body: json.encode({'code': code}),
     );
     if (response.statusCode == 200) {
-      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return json.decode(utf8.decode(response.bodyBytes))
+          as Map<String, dynamic>;
     } else {
       throw Exception('Failed to exchange Gmail code: ${response.statusCode}');
     }
@@ -138,14 +177,17 @@ class ApiClient {
     final uri = Uri.parse('$backendBaseUrl/gmail/status');
     final response = await http.get(uri);
     if (response.statusCode == 200) {
-      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return json.decode(utf8.decode(response.bodyBytes))
+          as Map<String, dynamic>;
     } else {
       throw Exception('Failed to get Gmail status: ${response.statusCode}');
     }
   }
 
   Future<int> syncGmail({int maxResults = 50}) async {
-    final uri = Uri.parse('$backendBaseUrl/gmail/sync').replace(queryParameters: {'max_results': maxResults.toString()});
+    final uri = Uri.parse(
+      '$backendBaseUrl/gmail/sync',
+    ).replace(queryParameters: {'max_results': maxResults.toString()});
     final response = await http.post(uri);
     return response.statusCode;
   }

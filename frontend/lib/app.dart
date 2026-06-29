@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'core/app_state.dart';
 import 'core/app_theme.dart';
 import 'screens/login_screen.dart';
+import 'screens/daily_brief_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/settings_screen.dart';
@@ -22,9 +23,12 @@ class SmartInboxApp extends StatelessWidget {
           title: 'SmartInbox AI',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.themeData,
-          home: state.isLoggedIn ? const DashboardScreen() : const LoginScreen(),
+          home: state.isLoggedIn
+              ? const DailyBriefScreen()
+              : const LoginScreen(),
           routes: {
             '/login': (context) => const LoginScreen(),
+            '/daily-brief': (context) => const DailyBriefScreen(),
             '/dashboard': (context) => const DashboardScreen(),
             '/stats': (context) => const StatsScreen(),
             '/settings': (context) => const SettingsScreen(),

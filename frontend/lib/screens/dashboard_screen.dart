@@ -75,10 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadEmails,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadEmails),
         ],
       ),
       drawer: Drawer(
@@ -87,11 +84,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             DrawerHeader(
               decoration: BoxDecoration(color: AppTheme.primary),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(
+                  const Text(
                     'SmartInbox AI',
                     style: TextStyle(
                       color: Colors.white,
@@ -99,13 +96,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'demo@example.com',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                    AppState().userEmail.isEmpty
+                        ? 'demo@example.com'
+                        : AppState().userEmail,
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.wb_sunny_outlined),
+              title: const Text('Daily Brief'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, '/daily-brief');
+              },
             ),
             ListTile(
               leading: const Icon(Icons.inbox),
@@ -190,9 +197,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
-              children: ['All', 'Important', 'Normal', 'Ignored'].map((category) {
+              children: ['All', 'Important', 'Normal', 'Ignored'].map((
+                category,
+              ) {
                 final isSelected = _selectedCategory == category;
-                    return Padding(
+                return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: FilterChip(
                     label: Text(category),
@@ -205,8 +214,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _loadEmails();
                       }
                     },
-                        selectedColor: AppTheme.primary.withOpacity(0.12),
-                        checkmarkColor: AppTheme.primary,
+                    selectedColor: AppTheme.primary.withOpacity(0.12),
+                    checkmarkColor: AppTheme.primary,
                   ),
                 );
               }).toList(),
@@ -215,7 +224,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 8),
           // Status bar showing active classifier
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 4.0,
+            ),
             child: Row(
               children: [
                 Icon(Icons.psychology, size: 16, color: Colors.grey.shade600),
@@ -236,52 +248,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _error.isNotEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Failed to load emails.\nEnsure FastAPI backend is running.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey.shade600),
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: _loadEmails,
-                                child: const Text('Retry'),
-                              ),
-                            ],
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.red,
                           ),
-                        ),
-                      )
-                    : _emails.isEmpty
-                        ? const Center(
-                            child: Text('No emails found in this category.'),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _loadEmails,
-                            child: ListView.builder(
-                              itemCount: _emails.length,
-                              itemBuilder: (context, index) {
-                                final email = _emails[index];
-                                return EmailCard(
-                                  email: email,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => EmailDetailScreen(emailId: email.id),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Failed to load emails.\nEnsure FastAPI backend is running.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey.shade600),
                           ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadEmails,
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : _emails.isEmpty
+                ? const Center(child: Text('No emails found in this category.'))
+                : RefreshIndicator(
+                    onRefresh: _loadEmails,
+                    child: ListView.builder(
+                      itemCount: _emails.length,
+                      itemBuilder: (context, index) {
+                        final email = _emails[index];
+                        return EmailCard(
+                          email: email,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    EmailDetailScreen(emailId: email.id),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
